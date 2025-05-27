@@ -11,7 +11,7 @@
     <!-- 購物車內容 -->
     <div v-else>
       <div class="cart-header">
-        <div>商品</div>
+        <div>活動</div>
         <div>單價</div>
         <div>數量</div>
         <div>小計</div>
@@ -64,7 +64,7 @@ onMounted(() => {
   setTimeout(() => {
     cart.loadFromStorage()
     isLoading.value = false
-  }, 600) // 可調整時間或改為等待 API
+  }, 300) // 可調整時間或改為等待 API
 })
 
 const cartItems = computed(() => cart.items)

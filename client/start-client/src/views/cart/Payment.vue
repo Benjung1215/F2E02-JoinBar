@@ -1,46 +1,66 @@
 <!-- src/views/Payment.vue -->
 <template>
   <div class="cart-container">
+    <button class="back-btn" @click="goBack">← 返回購物車</button>
+
     <h2>付款資訊</h2>
 
-    <!-- 商品摘要 -->
-    <div class="cart-header">
-      <div>商品</div>
-      <div>單價</div>
-      <div>數量</div>
-      <div>小計</div>
+    <div v-if="isLoading" class="loading-box">
+      <div class="spinner"></div>
+      <p>載入中，請稍候...</p>
     </div>
 
-    <div v-for="item in cartItems" :key="item.id" class="cart-row">
-      <div class="product">
-        <img class="product-img" :src="item.image || 'https://placehold.co/80x80'" />
-        <div class="product-info">
-          <p class="product-name">{{ item.name }}</p>
-        </div>
+    <!-- 商品摘要 -->
+    <div v-else>
+      <div class="cart-header">
+        <div>活動</div>
+        <div>單價</div>
+        <div>數量</div>
+        <div>小計</div>
       </div>
 
-      <div class="price">${{ item.price }}</div>
-      <div class="quantity text-center">{{ item.quantity }}</div>
-      <div class="subtotal">${{ calcSubtotal(item) }}</div>
-    </div>
+      <div v-for="item in cartItems" :key="item.id" class="cart-row">
+        <div class="product">
+          <img class="product-img" :src="item.image || 'https://placehold.co/80x80'" />
+          <div class="product-info">
+            <p class="product-name">{{ item.name }}</p>
+          </div>
+        </div>
 
-    <!-- 付款方式 -->
-    <div class="payment-method mt-4">
-      <h3>選擇付款方式</h3>
-      <label>
-        <input type="radio" value="linepay" v-model="paymentMethod" />
-        Line Pay
-      </label>
-      <label class="ms-4">
-        <input type="radio" value="creditcard" v-model="paymentMethod" />
-        信用卡
-      </label>
-    </div>
+        <div class="price">${{ item.price }}</div>
+        <div class="quantity text-center">{{ item.quantity }}</div>
+        <div class="subtotal">${{ calcSubtotal(item) }}</div>
+      </div>
 
-    <!-- 總金額與提交 -->
-    <div class="total-bar mt-4">
-      <p class="total-label">總金額：<strong>${{ totalPrice }}</strong></p>
-      <button class="checkout-btn" @click="submitOrder">確認付款</button>
+      <!-- 付款方式選擇 -->
+      <div class="payment-method section-spacing">
+        <h3>選擇付款方式</h3>
+        <div class="method-list">
+          <div
+            class="method-card"
+            :class="{ selected: paymentMethod === 'linepay' }"
+            @click="paymentMethod = 'linepay'"
+          >
+            <img src="/linepay.png" alt="LINE Pay" />
+            <span>LINE Pay</span>
+          </div>
+          <div
+            class="method-card"
+            :class="{ selected: paymentMethod === 'creditcard' }"
+            @click="paymentMethod = 'creditcard'"
+          >
+            <img src="/creditcard.png" alt="信用卡" />
+            <span>信用卡</span>
+          </div>
+        </div>
+
+        <div class="total-bar section-spacing">
+          <p class="total-label">
+            總金額：<strong>${{ totalPrice }}</strong>
+          </p>
+          <button class="checkout-btn" :disabled="!canSubmit" @click="submitOrder">確認付款</button>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -48,12 +68,18 @@
 <script setup>
 import { useCartStore } from '@/stores/cartStore'
 import { computed, ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 
 const cart = useCartStore()
-const paymentMethod = ref('linepay')
+const router = useRouter()
+const paymentMethod = ref('')
+const isLoading = ref(true)
 
 onMounted(() => {
-  cart.loadFromStorage()
+  setTimeout(() => {
+    cart.loadFromStorage()
+    isLoading.value = false
+  }, 300)
 })
 
 const cartItems = computed(() => cart.items)
@@ -65,9 +91,20 @@ const totalPrice = computed(() =>
 )
 
 const submitOrder = () => {
-  if (!paymentMethod.value) return alert('請選擇付款方式')
-  // TODO: 將付款方式存入 store，再導向 Confirm 頁面
-  alert(`選擇付款方式：${paymentMethod.value}，總金額：${totalPrice.value}`)
+  if (!['linepay', 'creditcard'].includes(paymentMethod.value)) {
+    return alert('請選擇付款方式')
+  }
+
+  cart.setPaymentMethod(paymentMethod.value)
+  router.push('/confirm')
+}
+
+const canSubmit = computed(() => {
+  return paymentMethod.value === 'linepay' || paymentMethod.value === 'creditcard'
+})
+
+const goBack = () => {
+  router.push('/cart')
 }
 </script>
 
@@ -233,6 +270,12 @@ const submitOrder = () => {
   background-color: #d32f2f;
 }
 
+.checkout-btn:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+  border-color: #ccc;
+}
+
 .payment-method {
   font-size: 15px;
 }
@@ -241,5 +284,60 @@ const submitOrder = () => {
   display: inline-block;
   margin-top: 0.5rem;
   cursor: pointer;
+}
+
+.back-btn {
+  background: none;
+  color: #555;
+  border: 1px solid #ccc;
+  padding: 6px 12px;
+  font-size: 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-bottom: 1rem;
+  transition: all 0.2s;
+}
+
+.back-btn:hover {
+  background-color: #f0f0f0;
+}
+
+.method-list {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+}
+
+.method-card {
+  border: 2px solid #ccc;
+  border-radius: 6px;
+  padding: 1rem;
+  width: 150px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background-color: #f9f9f9;
+}
+
+.method-card img {
+  width: 40px;
+  height: 40px;
+  margin-bottom: 0.5rem;
+}
+
+.method-card span {
+  display: block;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.method-card:hover {
+  border-color: #888;
+}
+
+.method-card.selected {
+  border-color: #f44;
+  background-color: #fff0f0;
 }
 </style>

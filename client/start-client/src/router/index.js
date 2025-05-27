@@ -8,7 +8,7 @@ import Subscription from '../views/sub/Subscription.vue'
 import Member from '../views/member/Member.vue'
 import Cart from '../views/cart/Cart.vue'
 import Payment from '../views/cart/Payment.vue'
-
+import Confirm from '../views/cart/Confirm.vue'
 
 const routes = [
   { path: '/', component: Home },
@@ -18,7 +18,8 @@ const routes = [
   { path: '/subscription', component: Subscription },
   { path: '/member', component: Member },
   { path: '/cart', component: Cart },
-  { path: '/payment', component: Payment }
+  { path: '/payment', component: Payment },
+  { path: '/confirm', component: Confirm }
 ]
 
 const router = createRouter({
