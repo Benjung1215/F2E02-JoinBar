@@ -1,4 +1,3 @@
-<!-- src/views/Payment.vue -->
 <template>
   <div class="cart-container">
     <button class="back-btn" @click="goBack">← 返回購物車</button>
@@ -10,7 +9,6 @@
       <p>載入中，請稍候...</p>
     </div>
 
-    <!-- 商品摘要 -->
     <div v-else>
       <div class="cart-header">
         <div>活動</div>
@@ -32,7 +30,27 @@
         <div class="subtotal">${{ calcSubtotal(item) }}</div>
       </div>
 
-      <!-- 付款方式選擇 -->
+      <!-- 客戶資訊表單 -->
+      <div class="customer-form">
+        <h3>用戶資訊</h3>
+        <div class="form-group">
+          <label>姓名 *</label>
+          <input v-model="customerInfo.name" type="text" placeholder="請輸入姓名" required />
+        </div>
+        <div class="form-group">
+          <label>電話 *</label>
+          <input v-model="customerInfo.phone" type="tel" placeholder="請輸入電話" required />
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input v-model="customerInfo.email" type="email" placeholder="請輸入 Email (選填)" />
+        </div>
+        <div class="form-group">
+          <label>備註</label>
+          <textarea v-model="customerInfo.notes" placeholder="有任何需求請說明" rows="2"></textarea>
+        </div>
+      </div>
+
       <div class="payment-method section-spacing">
         <h3>選擇付款方式</h3>
         <div class="method-list">
@@ -58,7 +76,13 @@
           <p class="total-label">
             總金額：<strong>${{ totalPrice }}</strong>
           </p>
-          <button class="checkout-btn" :disabled="!canSubmit" @click="submitOrder">確認付款</button>
+          <button 
+            class="checkout-btn" 
+            :disabled="!canSubmit || isSubmitting" 
+            @click="submitOrder"
+          >
+            {{ isSubmitting ? '處理中...' : '確認付款' }}
+          </button>
         </div>
       </div>
     </div>
@@ -74,34 +98,97 @@ const cart = useCartStore()
 const router = useRouter()
 const paymentMethod = ref('')
 const isLoading = ref(true)
+const isSubmitting = ref(false)
+
+// 客戶資訊
+const customerInfo = ref({
+  name: '',
+  phone: '',
+  email: '',
+  notes: ''
+})
 
 onMounted(() => {
   setTimeout(() => {
     cart.loadFromStorage()
     isLoading.value = false
-  }, 300)
+  }, 600)
 })
 
 const cartItems = computed(() => cart.items)
 
-const calcSubtotal = (item) => (item.price * item.quantity).toFixed(0)
+const calcSubtotal = (item) => (item.price * item.quantity).toLocaleString()
 
 const totalPrice = computed(() =>
-  cartItems.value.reduce((acc, item) => acc + item.price * item.quantity, 0),
+  cartItems.value.reduce((acc, item) => acc + item.price * item.quantity, 0).toLocaleString(),
 )
 
-const submitOrder = () => {
-  if (!['linepay', 'creditcard'].includes(paymentMethod.value)) {
-    return alert('請選擇付款方式')
-  }
-
-  cart.setPaymentMethod(paymentMethod.value)
-  router.push('/confirm')
-}
-
 const canSubmit = computed(() => {
-  return paymentMethod.value === 'linepay' || paymentMethod.value === 'creditcard'
+  return paymentMethod.value && customerInfo.value.name && customerInfo.value.phone
 })
+
+const submitOrder = async () => {
+  if (isSubmitting.value || !canSubmit.value) return
+
+  try {
+    isSubmitting.value = true
+
+    // 1. 建立訂單
+    const orderData = {
+      customerName: customerInfo.value.name,
+      customerPhone: customerInfo.value.phone,
+      customerEmail: customerInfo.value.email,
+      notes: customerInfo.value.notes,
+      items: cartItems.value.map(item => ({
+        id: item.id,
+        name: item.name,
+        price: item.price,
+        quantity: item.quantity
+      }))
+    }
+
+    const orderResponse = await fetch('/api/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(orderData)
+    })
+
+    const orderResult = await orderResponse.json()
+
+    if (!orderResult.success) {
+      throw new Error(orderResult.message || '建立訂單失敗')
+    }
+
+    // 2. 根據付款方式處理
+    if (paymentMethod.value === 'linepay') {
+      // LINE Pay 付款
+      const paymentResponse = await fetch('/api/linepay/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId: orderResult.data.orderId })
+      })
+
+      const paymentResult = await paymentResponse.json()
+
+      if (paymentResult.success) {
+        // 跳轉到 LINE Pay 付款頁面
+        window.location.href = paymentResult.data.paymentUrl
+      } else {
+        throw new Error(paymentResult.message || 'LINE Pay 付款失敗')
+      }
+    } else {
+      // 其他付款方式，直接跳轉到成功頁面
+      cart.clearCart()
+      router.push(`/order-success/${orderResult.data.orderNumber}?orderId=${orderResult.data.orderId}`)
+    }
+
+  } catch (error) {
+    console.error('送出訂單失敗:', error)
+    alert(error.message || '送出訂單失敗，請稍後再試')
+  } finally {
+    isSubmitting.value = false
+  }
+}
 
 const goBack = () => {
   router.push('/cart')
@@ -111,26 +198,26 @@ const goBack = () => {
 <style scoped>
 .cart-container {
   max-width: 1280px;
-  margin: 3rem auto;
-  padding: 2.5rem;
+  margin: 48px auto;
+  padding: 40px;
   background-color: #fff;
-  border-radius: 10px;
+  border-radius: 20px;
   box-shadow: 0 0 16px rgba(0, 0, 0, 0.05);
   font-size: 15px;
 }
 
 .loading-box {
   text-align: center;
-  padding: 3rem 0;
+  padding: 48px 0;
   color: #666;
 }
 
 .spinner {
-  margin: 1rem auto;
+  margin: 16px auto;
   width: 40px;
   height: 40px;
   border: 4px solid #eee;
-  border-top: 4px solid #f44;
+  border-top: 4px solid #860914;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -143,7 +230,7 @@ const goBack = () => {
 
 .cart-header {
   display: flex;
-  padding: 1rem 0;
+  padding: 16px 0;
   font-weight: bold;
   border-bottom: 1px solid #ddd;
 }
@@ -161,7 +248,7 @@ const goBack = () => {
 .cart-row {
   display: flex;
   align-items: center;
-  padding: 1rem 0;
+  padding: 16px 0;
   border-bottom: 1px solid #eee;
 }
 
@@ -182,7 +269,7 @@ const goBack = () => {
 .product {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 16px;
 }
 
 .product-img {
@@ -199,91 +286,80 @@ const goBack = () => {
   margin: 0;
 }
 
-.qty-box {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 8px;
+.customer-form {
+  margin: 32px 0;
+  padding: 24px;
+  background: #f9f9f9;
+  border-radius: 8px;
 }
 
-.qty-box button {
-  width: 32px;
-  height: 32px;
-  border: 1px solid #bbb;
-  border-radius: 4px;
-  background-color: white;
+.customer-form h3 {
+  margin: 0 0 16px 0;
   font-size: 18px;
-  cursor: pointer;
-  transition: background-color 0.2s;
+  color: #333;
 }
 
-.qty-box button:hover {
-  background-color: #eee;
+.form-group {
+  margin-bottom: 16px;
 }
 
-.qty-box span {
-  width: 36px;
-  text-align: center;
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
   font-weight: 500;
+  color: #333;
 }
 
-.actions button {
-  border: 1px solid #dc3545;
-  color: #dc3545;
-  background: white;
-  padding: 6px 12px;
-  font-size: 13px;
+.form-group input,
+.form-group textarea {
+  width: 98%;
+  padding: 12px;
+  border: 1px solid #ddd;
   border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.2s;
+  font-size: 14px;
 }
 
-.actions button:hover {
-  background-color: #dc3545;
-  color: white;
+.form-group input:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #860914;
 }
 
 .total-bar {
   display: flex;
   justify-content: flex-end;
   align-items: center;
-  margin-top: 2rem;
-  gap: 1rem;
+  margin-top: 32px;
+  gap: 16px;
 }
 
 .total-label {
-  font-size: 1.2rem;
+  font-size: 19px;
 }
 
 .checkout-btn {
-  background-color: #f44;
+  background-color: #860914;
   color: white;
   border: none;
-  padding: 0.6rem 1.5rem;
+  padding: 10px 24px;
   font-size: 14px;
   border-radius: 4px;
   cursor: pointer;
   transition: background-color 0.2s;
 }
 
-.checkout-btn:hover {
-  background-color: #d32f2f;
+.checkout-btn:hover:not(:disabled) {
+  background-color: #860914;
 }
 
 .checkout-btn:disabled {
   background-color: #ccc;
   cursor: not-allowed;
-  border-color: #ccc;
 }
 
 .payment-method {
   font-size: 15px;
-}
-
-.payment-method label {
-  display: inline-block;
-  margin-top: 0.5rem;
-  cursor: pointer;
+  margin-top: 16px;
 }
 
 .back-btn {
@@ -294,7 +370,7 @@ const goBack = () => {
   font-size: 14px;
   border-radius: 4px;
   cursor: pointer;
-  margin-bottom: 1rem;
+  margin-bottom: 16px;
   transition: all 0.2s;
 }
 
@@ -304,15 +380,15 @@ const goBack = () => {
 
 .method-list {
   display: flex;
-  gap: 1rem;
-  margin-top: 1rem;
+  gap: 16px;
+  margin-top: 16px;
   flex-wrap: wrap;
 }
 
 .method-card {
   border: 2px solid #ccc;
   border-radius: 6px;
-  padding: 1rem;
+  padding: 16px;
   width: 150px;
   text-align: center;
   cursor: pointer;
@@ -323,7 +399,7 @@ const goBack = () => {
 .method-card img {
   width: 40px;
   height: 40px;
-  margin-bottom: 0.5rem;
+  margin-bottom: 8px;
 }
 
 .method-card span {
@@ -337,7 +413,7 @@ const goBack = () => {
 }
 
 .method-card.selected {
-  border-color: #f44;
+  border-color: #860914;
   background-color: #fff0f0;
 }
 </style>

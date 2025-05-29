@@ -56,7 +56,7 @@
 }
 
 .cart-icon {
-  height: 24px;
+  height: 50%;
   width: auto;
   display: block;
 }
