@@ -1,6 +1,10 @@
+<!-- Payment.vue - 移除客戶資訊表單版本 -->
 <template>
   <div class="cart-container">
-    <button class="back-btn" @click="goBack">← 返回購物車</button>
+    <!-- 返回按鈕 - 使用 DaisyUI -->
+    <button class="btn btn-outline btn-sm mb-4" @click="goBack">
+      ← 返回購物車
+    </button>
 
     <h2>付款資訊</h2>
 
@@ -30,57 +34,52 @@
         <div class="subtotal">${{ calcSubtotal(item) }}</div>
       </div>
 
-      <!-- 客戶資訊表單 -->
-      <div class="customer-form">
-        <h3>用戶資訊</h3>
-        <div class="form-group">
-          <label>姓名 *</label>
-          <input v-model="customerInfo.name" type="text" placeholder="請輸入姓名" required />
-        </div>
-        <div class="form-group">
-          <label>電話 *</label>
-          <input v-model="customerInfo.phone" type="tel" placeholder="請輸入電話" required />
-        </div>
-        <div class="form-group">
-          <label>Email</label>
-          <input v-model="customerInfo.email" type="email" placeholder="請輸入 Email (選填)" />
-        </div>
-        <div class="form-group">
-          <label>備註</label>
-          <textarea v-model="customerInfo.notes" placeholder="有任何需求請說明" rows="2"></textarea>
-        </div>
-      </div>
-
       <div class="payment-method section-spacing">
         <h3>選擇付款方式</h3>
-        <div class="method-list">
-          <div
-            class="method-card"
-            :class="{ selected: paymentMethod === 'linepay' }"
+        
+        <!-- 付款方式選擇 -->
+        <div class="payment-options">
+          <!-- LINE Pay 選項 -->
+          <button 
+            class="btn bg-[#03C755] text-white border-[#00b544] payment-btn"
+            :class="{ 'ring-2 ring-[#03C755] ring-offset-2': paymentMethod === 'linepay' }"
             @click="paymentMethod = 'linepay'"
           >
-            <img src="/linepay.png" alt="LINE Pay" />
-            <span>LINE Pay</span>
-          </div>
-          <div
-            class="method-card"
-            :class="{ selected: paymentMethod === 'creditcard' }"
+            <svg aria-label="Line logo" width="16" height="16" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
+              <g fill-rule="evenodd" stroke-linejoin="round" fill="white">
+                <path fill-rule="nonzero" d="M12.91 6.57c.232 0 .42.19.42.42 0 .23-.188.42-.42.42h-1.17v.75h1.17a.42.42 0 1 1 0 .84h-1.59a.42.42 0 0 1-.418-.42V5.4c0-.23.188-.42.42-.42h1.59a.42.42 0 0 1-.002.84h-1.17v.75h1.17zm-2.57 2.01a.421.421 0 0 1-.757.251l-1.63-2.217V8.58a.42.42 0 0 1-.42.42.42.42 0 0 1-.418-.42V5.4a.418.418 0 0 1 .755-.249L9.5 7.366V5.4c0-.23.188-.42.42-.42.23 0 .42.19.42.42v3.18zm-3.828 0c0 .23-.188.42-.42.42a.42.42 0 0 1-.418-.42V5.4c0-.23.188-.42.42-.42.23 0 .418.19.418.42v3.18zM4.868 9h-1.59c-.23 0-.42-.19-.42-.42V5.4c0-.23.19-.42.42-.42.232 0 .42.19.42.42v2.76h1.17a.42.42 0 1 1 0 .84M16 6.87C16 3.29 12.41.376 8 .376S0 3.29 0 6.87c0 3.208 2.846 5.896 6.69 6.405.26.056.615.172.705.394.08.2.053.518.026.722 0 0-.092.565-.113.685-.035.203-.16.79.693.432.854-.36 4.607-2.714 6.285-4.646C15.445 9.594 16 8.302 16 6.87"></path>
+              </g>
+            </svg>
+            LINE Pay
+          </button>
+
+          <!-- 信用卡選項 -->
+          <button 
+            class="btn btn-outline payment-btn"
+            :class="{ 'ring-2 ring-blue-500 ring-offset-2': paymentMethod === 'creditcard' }"
             @click="paymentMethod = 'creditcard'"
           >
-            <img src="/creditcard.png" alt="信用卡" />
-            <span>信用卡</span>
-          </div>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M2 6C2 4.89543 2.89543 4 4 4H20C21.1046 4 22 4.89543 22 6V18C22 19.1046 21.1046 20 20 20H4C2.89543 20 2 19.1046 2 18V6Z" stroke="currentColor" stroke-width="2"/>
+              <path d="M2 10H22" stroke="currentColor" stroke-width="2"/>
+              <path d="M6 14H10" stroke="currentColor" stroke-width="2"/>
+            </svg>
+            信用卡
+          </button>
         </div>
 
         <div class="total-bar section-spacing">
           <p class="total-label">
             總金額：<strong>${{ totalPrice }}</strong>
           </p>
+          <!-- 確認付款按鈕 - 使用 DaisyUI -->
           <button 
-            class="checkout-btn" 
+            class="btn btn-primary checkout-btn"
+            :class="{ 'btn-disabled': !canSubmit || isSubmitting }"
             :disabled="!canSubmit || isSubmitting" 
             @click="submitOrder"
           >
+            <span v-if="isSubmitting" class="loading loading-spinner loading-sm"></span>
             {{ isSubmitting ? '處理中...' : '確認付款' }}
           </button>
         </div>
@@ -100,14 +99,6 @@ const paymentMethod = ref('')
 const isLoading = ref(true)
 const isSubmitting = ref(false)
 
-// 客戶資訊
-const customerInfo = ref({
-  name: '',
-  phone: '',
-  email: '',
-  notes: ''
-})
-
 onMounted(() => {
   setTimeout(() => {
     cart.loadFromStorage()
@@ -124,7 +115,7 @@ const totalPrice = computed(() =>
 )
 
 const canSubmit = computed(() => {
-  return paymentMethod.value && customerInfo.value.name && customerInfo.value.phone
+  return paymentMethod.value
 })
 
 const submitOrder = async () => {
@@ -135,10 +126,6 @@ const submitOrder = async () => {
 
     // 1. 建立訂單
     const orderData = {
-      customerName: customerInfo.value.name,
-      customerPhone: customerInfo.value.phone,
-      customerEmail: customerInfo.value.email,
-      notes: customerInfo.value.notes,
       items: cartItems.value.map(item => ({
         id: item.id,
         name: item.name,
@@ -286,45 +273,6 @@ const goBack = () => {
   margin: 0;
 }
 
-.customer-form {
-  margin: 32px 0;
-  padding: 24px;
-  background: #f9f9f9;
-  border-radius: 8px;
-}
-
-.customer-form h3 {
-  margin: 0 0 16px 0;
-  font-size: 18px;
-  color: #333;
-}
-
-.form-group {
-  margin-bottom: 16px;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 8px;
-  font-weight: 500;
-  color: #333;
-}
-
-.form-group input,
-.form-group textarea {
-  width: 98%;
-  padding: 12px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 14px;
-}
-
-.form-group input:focus,
-.form-group textarea:focus {
-  outline: none;
-  border-color: #860914;
-}
-
 .total-bar {
   display: flex;
   justify-content: flex-end;
@@ -337,83 +285,40 @@ const goBack = () => {
   font-size: 19px;
 }
 
-.checkout-btn {
-  background-color: #860914;
-  color: white;
-  border: none;
-  padding: 10px 24px;
-  font-size: 14px;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.checkout-btn:hover:not(:disabled) {
-  background-color: #860914;
-}
-
-.checkout-btn:disabled {
-  background-color: #ccc;
-  cursor: not-allowed;
-}
-
 .payment-method {
   font-size: 15px;
   margin-top: 16px;
 }
 
-.back-btn {
-  background: none;
-  color: #555;
-  border: 1px solid #ccc;
-  padding: 6px 12px;
-  font-size: 14px;
-  border-radius: 4px;
-  cursor: pointer;
-  margin-bottom: 16px;
-  transition: all 0.2s;
-}
-
-.back-btn:hover {
-  background-color: #f0f0f0;
-}
-
-.method-list {
+/* 付款方式選擇樣式 */
+.payment-options {
   display: flex;
   gap: 16px;
   margin-top: 16px;
-  flex-wrap: wrap;
 }
 
-.method-card {
-  border: 2px solid #ccc;
-  border-radius: 6px;
-  padding: 16px;
-  width: 150px;
-  text-align: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  background-color: #f9f9f9;
-}
-
-.method-card img {
-  width: 40px;
-  height: 40px;
-  margin-bottom: 8px;
-}
-
-.method-card span {
-  display: block;
-  font-size: 15px;
+.payment-btn {
+  padding: 12px 20px;
+  font-size: 16px;
   font-weight: 500;
+  height: auto;
+  min-height: 60px;
+  width: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s;
 }
 
-.method-card:hover {
-  border-color: #888;
+.payment-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-.method-card.selected {
-  border-color: #860914;
-  background-color: #fff0f0;
+/* 確保 DaisyUI 按鈕保持原始字體 */
+.checkout-btn {
+  font-size: 14px;
+  padding: 10px 24px;
 }
 </style>

@@ -8,44 +8,52 @@
     </div>
 
     <div v-else>
-      <div class="cart-header">
-        <div>商品</div>
-        <div>單價</div>
-        <div>數量</div>
-        <div>小計</div>
-        <div>操作</div>
+      <div v-if="cartItems.length === 0" class="empty-cart">
+        <h3>購物車是空的</h3>
+        <p class="empty-description">快去尋找喜歡的活動吧！</p>
+        <button class="shop-btn" @click="goShopping">前往活動頁面</button>
       </div>
 
-      <div v-for="item in cartItems" :key="item.id" class="cart-row">
-        <div class="product">
-          <img
-            class="product-img"
-            :src="item.image || 'https://placehold.co/80x80?text=No+Image'"
-            alt="活動圖片"
-          />
-          <div class="product-info">
-            <p class="product-name">{{ item.name }}</p>
+      <div v-else>
+        <div class="cart-header">
+          <div>商品</div>
+          <div>單價</div>
+          <div>數量</div>
+          <div>小計</div>
+          <div>操作</div>
+        </div>
+
+        <div v-for="item in cartItems" :key="item.id" class="cart-row">
+          <div class="product">
+            <img
+              class="product-img"
+              :src="item.image || 'https://placehold.co/80x80?text=No+Image'"
+              alt="活動圖片"
+            />
+            <div class="product-info">
+              <p class="product-name">{{ item.name }}</p>
+            </div>
+          </div>
+
+          <div class="price">${{ item.price }}</div>
+
+          <div class="qty-box">
+            <span>{{ item.quantity }}</span>
+          </div>
+
+          <div class="subtotal">${{ calcSubtotal(item) }}</div>
+
+          <div class="actions">
+            <button @click="removeItem(item.id)">刪除</button>
           </div>
         </div>
 
-        <div class="price">${{ item.price }}</div>
-
-        <div class="qty-box">
-          <span>{{ item.quantity }}</span>
+        <div class="total-bar">
+          <p class="total-label">
+            總金額：<strong>${{ totalPrice }}</strong>
+          </p>
+          <button class="checkout-btn" @click="goToPayment">去買單</button>
         </div>
-
-        <div class="subtotal">${{ calcSubtotal(item) }}</div>
-
-        <div class="actions">
-          <button @click="removeItem(item.id)">刪除</button>
-        </div>
-      </div>
-
-      <div class="total-bar">
-        <p class="total-label">
-          總金額：<strong>${{ totalPrice }}</strong>
-        </p>
-        <button class="checkout-btn" @click="goToPayment">去買單</button>
       </div>
     </div>
   </div>
@@ -68,17 +76,17 @@ onMounted(() => {
 })
 
 const cartItems = computed(() => cart.items)
-
 const removeItem = (id) => cart.removeItem(id)
-
 const calcSubtotal = (item) => (item.price * item.quantity).toLocaleString()
-
 const totalPrice = computed(() =>
   cartItems.value.reduce((acc, item) => acc + item.price * item.quantity, 0).toLocaleString(),
 )
-
 const goToPayment = () => {
   router.push('/payment')
+}
+
+const goShopping = () => {
+  router.push('/events')
 }
 </script>
 
@@ -93,10 +101,15 @@ const goToPayment = () => {
   font-size: 15px;
 }
 
+.cart-container h2 {
+  color: var(--color-black);
+  margin-bottom: 32px;
+}
+
 .loading-box {
   text-align: center;
   padding: 48px 0;
-  color: #3A3435;
+  color: var(--color-black);
 }
 
 .spinner {
@@ -104,7 +117,7 @@ const goToPayment = () => {
   width: 40px;
   height: 40px;
   border: 4px solid #eee;
-  border-top: 4px solid #860914;
+  border-top: 4px solid var(--color-primary-red);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -120,6 +133,7 @@ const goToPayment = () => {
   padding: 16px 0;
   font-weight: bold;
   border-bottom: 1px solid #ddd;
+  color: var(--color-black);
 }
 
 .cart-header > div {
@@ -171,6 +185,7 @@ const goToPayment = () => {
   font-size: 16px;
   font-weight: 600;
   margin: 0;
+  color: var(--color-black);
 }
 
 .qty-box {
@@ -180,21 +195,6 @@ const goToPayment = () => {
   gap: 8px;
 }
 
-.qty-box button {
-  width: 32px;
-  height: 32px;
-  border: 1px solid #bbb;
-  border-radius: 4px;
-  background-color: white;
-  font-size: 18px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.qty-box button:hover {
-  background-color: #eee;
-}
-
 .qty-box span {
   width: 36px;
   text-align: center;
@@ -202,8 +202,8 @@ const goToPayment = () => {
 }
 
 .actions button {
-  border: 1px solid #860914;
-  color: #860914;
+  border: 1px solid var(--color-primary-red);
+  color: var(--color-primary-red);
   background: white;
   padding: 6px 12px;
   font-size: 13px;
@@ -213,7 +213,7 @@ const goToPayment = () => {
 }
 
 .actions button:hover {
-  background-color: #860914;
+  background-color: var(--color-primary-red);
   color: white;
 }
 
@@ -227,10 +227,16 @@ const goToPayment = () => {
 
 .total-label {
   font-size: 19px;
+  color: var(--color-black);
+  margin: 0;
+}
+
+.total-label strong {
+  color: var(--color-black);
 }
 
 .checkout-btn {
-  background-color: #860914;
+  background-color: var(--color-primary-red);
   color: white;
   border: none;
   padding: 10px 24px;
@@ -241,6 +247,48 @@ const goToPayment = () => {
 }
 
 .checkout-btn:hover {
-  background-color: #860914;
+  background-color: var(--color-secondary-pink);
+}
+
+/* 空購物車樣式 */
+.empty-cart {
+  text-align: center;
+  padding: 80px 40px;
+  color: var(--color-black);
+}
+
+.empty-icon {
+  font-size: 80px;
+  margin-bottom: 24px;
+  opacity: 0.6;
+}
+
+.empty-cart h3 {
+  font-size: 24px;
+  margin-bottom: 16px;
+  color: var(--color-black);
+}
+
+.empty-description {
+  font-size: 16px;
+  margin-bottom: 32px;
+  color: #666;
+  line-height: 1.5;
+}
+
+.shop-btn {
+  background-color: var(--color-primary-red);
+  color: white;
+  border: none;
+  padding: 12px 32px;
+  font-size: 16px;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.shop-btn:hover {
+  background-color: var(--color-secondary-pink);
 }
 </style>

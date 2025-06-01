@@ -1,7 +1,7 @@
 {
-  "name": "start-client",
-  "version": "0.0.0",
+  "name": "joinbar-frontend",
   "private": true,
+  "version": "0.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -11,7 +11,10 @@
     "format": "prettier --write src/"
   },
   "dependencies": {
+    "@tailwindcss/vite": "^4.1.8",
+    "daisyui": "^5.0.43",
     "pinia": "^3.0.1",
+    "tailwindcss": "^4.1.8",
     "vue": "^3.5.13",
     "vue-router": "^4.5.0"
   },
@@ -22,7 +25,7 @@
     "eslint": "^9.22.0",
     "eslint-plugin-vue": "~10.0.0",
     "globals": "^16.0.0",
-    "prettier": "3.5.3",
+    "prettier": "^3.5.3",
     "vite": "^6.2.4",
     "vite-plugin-vue-devtools": "^7.7.2"
   }

@@ -1,0 +1,31 @@
+/* @import './base.css'; */
+@import "tailwindcss";
+@plugin "daisyui";
+
+/* 全站通用樣式 */
+
+:root {
+  --color-primary-red: #860914;
+  --color-primary-orange: #daa258;
+  --color-secondary-pink: #decdd5;
+  --color-secondary-green: #afb18c;
+  --color-black: #3A3435;
+}
+
+/* :root {
+  --color-primary-red: #d4624e;
+  --color-primary-orange: #f2bf56;
+  --color-secondary-pink: #f4dad9;
+  --color-secondary-green: #d0de80;
+  --color-black: #292929;
+} */
+
+/* 在 main.css 或 App.vue 的 <style> 中 */
+:root {
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-size: revert !important;
+  font-weight: revert !important;
+}

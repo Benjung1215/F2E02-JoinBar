@@ -1,8 +1,7 @@
-<!-- src/components/Navbar.vue -->
 <template>
   <nav class="navbar">
     <div class="logo">
-      <RouterLink to="/">
+      <RouterLink to="/home">
         <img src="/join-bar-logo.png" alt="JoinBar Logo" />
       </RouterLink>
     </div>
@@ -12,7 +11,7 @@
       <li><RouterLink to="/events">酒吧活動</RouterLink></li>
       <li><RouterLink to="/subscription">訂閱優惠</RouterLink></li>
       <li><RouterLink to="/member">會員服務</RouterLink></li>
-      <li><RouterLink to="/cart"><img class="cart-icon" src="/cart-icon.png" alt="JoinBar Logo" /></RouterLink></li>
+      <li><RouterLink to="/cart"><img class="cart-icon" src="/cart.png" alt="Cart Icon" /></RouterLink></li>
     </ul>
   </nav>
 </template>
@@ -22,10 +21,10 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem 2rem;
+  padding: 16px 32px;
   background-color: #bbbbbb;
   color: white;
-  height: 50px;
+  height: 100px;
 }
 
 .logo img {
@@ -36,7 +35,7 @@
 .nav-links {
   list-style: none;
   display: flex;
-  gap: 1.5rem;
+  gap: 24px;
   align-items: center;
   height: 100%;
 }
@@ -56,7 +55,7 @@
 }
 
 .cart-icon {
-  height: 50%;
+  height: 55%;
   width: auto;
   display: block;
 }
