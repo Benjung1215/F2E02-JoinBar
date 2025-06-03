@@ -1,4 +1,4 @@
-<!-- Payment.vue - 移除客戶資訊表單版本 -->
+<!-- Payment.vue - 修正版本 -->
 <template>
   <div class="cart-container">
     <!-- 返回按鈕 - 使用 DaisyUI -->
@@ -100,10 +100,18 @@ const isLoading = ref(true)
 const isSubmitting = ref(false)
 
 onMounted(() => {
-  setTimeout(() => {
-    cart.loadFromStorage()
-    isLoading.value = false
-  }, 600)
+  // 直接載入購物車資料
+  cart.loadFromStorage()
+  
+  // 檢查購物車是否為空
+  if (cart.items.length === 0) {
+    alert('購物車是空的，即將返回購物車頁面')
+    router.push('/cart')
+    return
+  }
+  
+  isLoading.value = false
+  console.log('付款頁面已載入，當前為模擬模式')
 })
 
 const cartItems = computed(() => cart.items)
@@ -124,54 +132,42 @@ const submitOrder = async () => {
   try {
     isSubmitting.value = true
 
-    // 1. 建立訂單
-    const orderData = {
-      items: cartItems.value.map(item => ({
-        id: item.id,
-        name: item.name,
-        price: item.price,
-        quantity: item.quantity
-      }))
-    }
+    // 計算原始總金額（數字）
+    const rawTotalAmount = cartItems.value.reduce((acc, item) => acc + item.price * item.quantity, 0)
 
-    const orderResponse = await fetch('/api/orders', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(orderData)
-    })
-
-    const orderResult = await orderResponse.json()
-
-    if (!orderResult.success) {
-      throw new Error(orderResult.message || '建立訂單失敗')
-    }
-
-    // 2. 根據付款方式處理
-    if (paymentMethod.value === 'linepay') {
-      // LINE Pay 付款
-      const paymentResponse = await fetch('/api/linepay/create', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderId: orderResult.data.orderId })
-      })
-
-      const paymentResult = await paymentResponse.json()
-
-      if (paymentResult.success) {
-        // 跳轉到 LINE Pay 付款頁面
-        window.location.href = paymentResult.data.paymentUrl
-      } else {
-        throw new Error(paymentResult.message || 'LINE Pay 付款失敗')
+    // 模擬訂單建立
+    const mockOrderResult = {
+      order: {
+        orderId: Date.now().toString(),
+        orderNumber: `ORDER-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${Date.now().toString().slice(-6)}`,
+        totalAmount: rawTotalAmount.toString()  // 使用統一的總金額
       }
-    } else {
-      // 其他付款方式，直接跳轉到成功頁面
-      cart.clearCart()
-      router.push(`/order-success/${orderResult.data.orderNumber}?orderId=${orderResult.data.orderId}`)
     }
+
+    console.log('模擬建立訂單:', mockOrderResult)
+
+    // 模擬 API 處理延遲
+    await new Promise(resolve => setTimeout(resolve, 1500))
+
+    // 根據付款方式處理
+    if (paymentMethod.value === 'linepay') {
+      console.log('模擬 LINE Pay 付款流程')
+      alert(`🟢 LINE Pay 模擬付款\n\n訂單編號：${mockOrderResult.order.orderNumber}\n金額：$${rawTotalAmount.toLocaleString()}\n\n點擊確定完成模擬付款`)
+      
+    } else if (paymentMethod.value === 'creditcard') {
+      console.log('模擬信用卡付款流程')
+      alert(`💳 信用卡模擬付款\n\n訂單編號：${mockOrderResult.order.orderNumber}\n金額：$${rawTotalAmount.toLocaleString()}\n\n點擊確定完成模擬付款`)
+    }
+
+    // 模擬付款成功，清空購物車
+    cart.clearCart()
+    
+    // 跳轉到成功頁面
+    router.push(`/order-success/${mockOrderResult.order.orderNumber}?orderId=${mockOrderResult.order.orderId}`)
 
   } catch (error) {
-    console.error('送出訂單失敗:', error)
-    alert(error.message || '送出訂單失敗，請稍後再試')
+    console.error('模擬付款錯誤:', error)
+    alert('模擬付款失敗，請重新嘗試')
   } finally {
     isSubmitting.value = false
   }
