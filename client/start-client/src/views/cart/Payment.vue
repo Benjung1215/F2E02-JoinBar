@@ -72,9 +72,9 @@
           <p class="total-label">
             總金額：<strong>${{ totalPrice }}</strong>
           </p>
-          <!-- 確認付款按鈕 - 使用 DaisyUI -->
+          <!-- 確認付款按鈕 - 使用自定義顏色 -->
           <button 
-            class="btn btn-primary checkout-btn"
+            class="btn checkout-btn"
             :class="{ 'btn-disabled': !canSubmit || isSubmitting }"
             :disabled="!canSubmit || isSubmitting" 
             @click="submitOrder"
@@ -312,9 +312,32 @@ const goBack = () => {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-/* 確保 DaisyUI 按鈕保持原始字體 */
+/* 確認付款按鈕自定義樣式 */
 .checkout-btn {
   font-size: 14px;
   padding: 10px 24px;
+  background-color: #860914;
+  border-color: #860914;
+  color: white;
+  font-weight: 500;
+}
+
+.checkout-btn:hover:not(.btn-disabled) {
+  background-color: #a50b18;
+  border-color: #a50b18;
+  color: white;
+}
+
+.checkout-btn:active:not(.btn-disabled) {
+  background-color: #6b0710;
+  border-color: #6b0710;
+  color: white;
+}
+
+.checkout-btn.btn-disabled {
+  background-color: #ccc;
+  border-color: #ccc;
+  color: #888;
+  cursor: not-allowed;
 }
 </style>
